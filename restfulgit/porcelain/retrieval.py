@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals, print_function, division
 
 import os
+from subprocess import call
 
 from flask import current_app, url_for, safe_join
 from werkzeug.exceptions import NotFound, BadRequest
@@ -191,3 +192,15 @@ def get_commits_unique_to_branch(repo, branch, sort=GIT_SORT_NONE):
     for ancestor in common_ancestor_oids:
         walker.hide(ancestor)
     return walker
+
+
+def remote_update(repo_key):
+    path = safe_join(current_app.config['RESTFULGIT_REPO_BASE_PATH'], repo_key)
+
+    cmd = ["git", "--git-dir=%s" % path, "remote", "update"]
+    result = call(cmd)
+
+    if result != 0:
+        raise InternalServerError("'%s' returns non-zero code: %s" % (' '.join(cmd), result))
+
+    return { "result": "ok" }

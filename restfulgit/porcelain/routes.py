@@ -6,12 +6,12 @@ from itertools import ifilter
 from collections import defaultdict
 
 from flask import request, Response, Blueprint, url_for
-from werkzeug.exceptions import NotFound, BadRequest
+from werkzeug.exceptions import NotFound, BadRequest, InternalServerError
 from pygit2 import GIT_SORT_TOPOLOGICAL, GIT_SORT_TIME, GIT_SORT_REVERSE
 
 from restfulgit.plumbing.retrieval import get_repo, lookup_ref, get_tree
 from restfulgit.plumbing.converters import convert_tag
-from restfulgit.porcelain.retrieval import get_repo_names, get_commit_for_refspec, get_branch as _get_branch, get_object_from_path, get_raw_file_content, get_contents as _get_contents, get_diff as _get_diff, get_blame as _get_blame, get_commits_unique_to_branch as _get_commits_unique_to_branch, get_authors
+from restfulgit.porcelain.retrieval import get_repo_names, get_commit_for_refspec, get_branch as _get_branch, get_object_from_path, get_raw_file_content, get_contents as _get_contents, get_diff as _get_diff, get_blame as _get_blame, get_commits_unique_to_branch as _get_commits_unique_to_branch, get_authors, remote_update
 from restfulgit.porcelain.converters import convert_repo, convert_branch_verbose, convert_branch_summary, convert_commit, convert_blame
 from restfulgit.utils.json import jsonify
 from restfulgit.utils.cors import corsify
@@ -296,3 +296,12 @@ def get_contributors(repo_key):
         }
         for email, commit_count in leaderboard
     ]
+
+
+@porcelain.route('/repos/<repo_key>/fetch/', methods=['POST'])
+@corsify
+@jsonify
+def fetch_origin(repo_key):
+    get_repo(repo_key)  # check repo_key validity
+    result = remote_update(repo_key)
+    return result
